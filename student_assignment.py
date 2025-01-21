@@ -1,11 +1,7 @@
-import json
-import traceback
-
 from model_configurations import get_model_configuration
 
 from langchain_openai import AzureChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
+from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 from typing import List
 
@@ -24,14 +20,6 @@ class AnniversaryResponse(BaseModel):
 
 def generate_hw01(question):
     llm = get_llm()
-    # pydantic_parser = PydanticOutputParser(pydantic_object=AnniversaryResponse)
-    # format_instructions = pydantic_parser.get_format_instructions()
-    #
-    # sys_message = SystemMessage(
-    #     content=[
-    #         {"type": "text", "text": format_instructions},
-    #     ]
-    # )
 
     message = HumanMessage(
         content=[
