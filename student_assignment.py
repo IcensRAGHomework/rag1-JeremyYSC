@@ -33,7 +33,7 @@ class CheckResponse(BaseModel):
 
 
 class CheckResponseList(BaseModel):
-    Result: List[CheckResponse] = Field(description="List of CheckResponse")
+    Result: CheckResponse = Field(description="Result of CheckResponse")
 
 
 def generate_hw01(question):
