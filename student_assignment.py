@@ -112,8 +112,8 @@ def fetch_holidays(country: str, year: str, month: str):
         for holiday in holidays:
             anniversary_response.Result.append(Anniversary(date=holiday["date"]["iso"], name=holiday["name"]))
 
-        return anniversary_response.model_dump_json()
-    return anniversary_response.model_dump_json()
+        return anniversary_response.json()
+    return anniversary_response.json()
 
 
 def fetch_holidays_from_ai_msg(msg):
@@ -126,11 +126,13 @@ def fetch_holidays_from_ai_msg(msg):
 
 
 def main():
-    # response = generate_hw01('2024年台灣10月紀念日有哪些?')
-    # print(response)
+    response = generate_hw01('2024年台灣10月紀念日有哪些?')
+    print(response)
+    print(type(response))
 
-    result = generate_hw02('2024年台灣10月紀念日有哪些?')
-    print(result)
+    response = generate_hw02('2024年台灣10月紀念日有哪些?')
+    print(response)
+    print(type(response))
 
 
 if __name__ == '__main__':
