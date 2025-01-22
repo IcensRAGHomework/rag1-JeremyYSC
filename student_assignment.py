@@ -1,12 +1,19 @@
+import os
+import requests
+
 from model_configurations import get_model_configuration
 
 from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import HumanMessage
+from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 from typing import List
 
 gpt_chat_version = 'gpt-4o'
 gpt_config = get_model_configuration(gpt_chat_version)
+
+api_key = os.getenv('CALENDARIFIC_API_KEY')
+base_url = "https://calendarific.com/api/v2/holidays"
 
 
 class Anniversary(BaseModel):
@@ -33,7 +40,18 @@ def generate_hw01(question):
 
 
 def generate_hw02(question):
-    pass
+    llm = get_llm()
+    tools = [fetch_holidays]
+    llm = llm.bind_tools(tools)
+
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": question},
+        ]
+    )
+
+    chain = llm | fetch_holidays_from_ai_msg
+    return chain.invoke([message])
 
 
 def generate_hw03(question2, question3):
@@ -74,9 +92,45 @@ def get_llm():
     )
 
 
+@tool
+def fetch_holidays(country: str, year: str, month: str):
+    """Get the anniversary of a specific country in a certain year and month"""
+    params = {
+        "api_key": api_key,
+        "country": country,
+        "year": year,
+        "month": month,
+        "type": "national"
+    }
+
+    response = requests.get(base_url, params=params)
+    anniversary_response = AnniversaryResponse(Result=[])
+
+    if response.status_code == 200:
+        holidays = response.json().get("response", {}).get("holidays", [])
+
+        for holiday in holidays:
+            anniversary_response.Result.append(Anniversary(date=holiday["date"]["iso"], name=holiday["name"]))
+
+        return anniversary_response.model_dump_json()
+    return anniversary_response.model_dump_json()
+
+
+def fetch_holidays_from_ai_msg(msg):
+    if hasattr(msg, "tool_calls") and msg.tool_calls:
+        for tool_call in msg.tool_calls:
+            if tool_call["name"].lower() == "fetch_holidays":
+                return fetch_holidays.invoke(tool_call["args"])
+
+    return msg
+
+
 def main():
-    response = generate_hw01('2024年台灣10月紀念日有哪些?')
-    print(response)
+    # response = generate_hw01('2024年台灣10月紀念日有哪些?')
+    # print(response)
+
+    result = generate_hw02('2024年台灣10月紀念日有哪些?')
+    print(result)
 
 
 if __name__ == '__main__':
