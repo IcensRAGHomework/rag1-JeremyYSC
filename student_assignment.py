@@ -1,7 +1,9 @@
-import json
 import requests
 
+from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.messages import HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.tools import tool
 from langchain_openai import AzureChatOpenAI
 from model_configurations import get_calendarific_api_key
@@ -23,6 +25,15 @@ class Anniversary(BaseModel):
 
 class AnniversaryResponse(BaseModel):
     Result: List[Anniversary] = Field(description="List of Anniversary")
+
+
+class CheckResponse(BaseModel):
+    add: bool = Field(description="If need to add a new anniversary")
+    reason: str = Field(description="Why or why not add an anniversary")
+
+
+class CheckResponseList(BaseModel):
+    Result: List[CheckResponse] = Field(description="List of CheckResponse")
 
 
 def generate_hw01(question):
@@ -55,7 +66,31 @@ def generate_hw02(question):
 
 
 def generate_hw03(question2, question3):
-    pass
+    prompt = ChatPromptTemplate.from_messages([
+        MessagesPlaceholder(variable_name="history"),
+        ("human", "{input}")
+    ])
+
+    memory = ChatMessageHistory()
+    memory.add_user_message(question2)
+    memory.add_ai_message(generate_hw02(question2))
+
+    def get_session_history(session_id):
+        return memory
+
+    llm = get_llm()
+    llm = llm.with_structured_output(CheckResponseList)
+    chain = prompt | llm
+
+    chat_history = RunnableWithMessageHistory(
+        chain,
+        get_session_history=get_session_history,
+        input_messages_key="input",
+        history_messages_key="history",
+    )
+
+    response = chat_history.invoke({"input": question3}, config={"configurable": {"session_id": "0"}})
+    return response.json()
 
 
 def generate_hw04(question):
@@ -125,13 +160,20 @@ def fetch_holidays_from_ai_msg(msg):
 
 
 def main():
-    # response = generate_hw01('2024年台灣10月紀念日有哪些?')
+    question1 = '2024年台灣10月紀念日有哪些?'
+    response = generate_hw01(question1)
     # print(response)
     # print(type(response))
 
-    response2 = generate_hw02('2024年台灣10月紀念日有哪些?')
-    print(response2)
-    print(type(response2))
+    question2 = '2024年台灣10月紀念日有哪些?'
+    # response2 = generate_hw02(question2)
+    # print(response2)
+    # print(type(response2))
+
+    question3 = '根據先前的節日清單，這個節日{"date": "10-31", "name": "蔣公誕辰紀念日"}是否有在該月份清單？'
+    response3 = generate_hw03(question2, question3)
+    print(response3)
+    print(type(response3))
 
 
 if __name__ == '__main__':
