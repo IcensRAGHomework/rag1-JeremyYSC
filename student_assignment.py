@@ -100,7 +100,6 @@ def fetch_holidays(country: str, year: str, month: str):
         "country": country,
         "year": year,
         "month": month,
-        "type": "national"
     }
 
     response = requests.get(base_url, params=params)
@@ -112,8 +111,8 @@ def fetch_holidays(country: str, year: str, month: str):
         for holiday in holidays:
             anniversary_response.Result.append(Anniversary(date=holiday["date"]["iso"], name=holiday["name"]))
 
-        return anniversary_response.json()
-    return anniversary_response.json()
+        return anniversary_response.model_dump_json()
+    return anniversary_response.model_dump_json()
 
 
 def fetch_holidays_from_ai_msg(msg):
