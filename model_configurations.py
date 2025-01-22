@@ -15,5 +15,10 @@ configurations = {
     }
 }
 
+calendarific_api_key = os.getenv('CALENDARIFIC_API_KEY')
+
 def get_model_configuration(model_version):
     return configurations.get(model_version)
+
+def get_calendarific_api_key():
+    return calendarific_api_key

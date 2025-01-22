@@ -1,18 +1,17 @@
-import os
 import requests
 
-from model_configurations import get_model_configuration
-
-from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
+from langchain_openai import AzureChatOpenAI
+from model_configurations import get_calendarific_api_key
+from model_configurations import get_model_configuration
 from pydantic import BaseModel, Field
 from typing import List
 
 gpt_chat_version = 'gpt-4o'
 gpt_config = get_model_configuration(gpt_chat_version)
 
-api_key = os.getenv('CALENDARIFIC_API_KEY')
+api_key = get_calendarific_api_key()
 base_url = "https://calendarific.com/api/v2/holidays"
 
 
