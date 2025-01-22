@@ -1,11 +1,17 @@
+import base64
+import json
 import requests
 
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.messages import HumanMessage
+from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.tools import tool
 from langchain_openai import AzureChatOpenAI
+from langchain_community.document_loaders import UnstructuredImageLoader
+from langchain.prompts import PromptTemplate
+from mimetypes import guess_type
 from model_configurations import get_calendarific_api_key
 from model_configurations import get_model_configuration
 from pydantic import BaseModel, Field
@@ -94,7 +100,47 @@ def generate_hw03(question2, question3):
 
 
 def generate_hw04(question):
-    pass
+    path = 'baseball.png'
+    page3_encoded = image_to_data_url(path)
+    llm = get_llm()
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": [
+            {
+                "type": "text",
+                "text": f'請回答 {question},以 JSON 格式輸出，格式如下: {{\"Result\": {{\"score\": \"答案\"}}}}'
+            },
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": page3_encoded
+                }
+            }
+        ]}
+    ]
+
+    chain = llm
+    response = chain.invoke(messages)
+    parser = JsonOutputParser()
+    parsed_result = parser.parse(response.content)
+    parsed_result["Result"]["score"] = int(parsed_result["Result"]["score"])
+    return json.dumps(parsed_result, ensure_ascii=False)
+
+    # image_path = 'baseball.png'
+    # data_url = image_to_data_url(image_path)
+    #
+    # prompt_template = ChatPromptTemplate.from_messages([
+    #     ("system", "You are an expert in analyzing images and extracting data."),
+    #     ("human", "{question}\nImage data: {image_data}")
+    # ])
+    #
+    # prompt = prompt_template.format_prompt(
+    #     question=question,
+    #     image_data=data_url
+    # )
+    #
+    # llm = get_llm()
+    # return llm.invoke(prompt)
 
 
 def demo(question):
@@ -159,9 +205,15 @@ def fetch_holidays_from_ai_msg(msg):
     return msg
 
 
+def image_to_data_url(image_path):
+    with open(image_path, "rb") as img_file:
+        img_data = img_file.read()
+        return "data:image/jpeg;base64," + base64.b64encode(img_data).decode('utf-8')
+
+
 def main():
     question1 = '2024年台灣10月紀念日有哪些?'
-    response = generate_hw01(question1)
+    # response = generate_hw01(question1)
     # print(response)
     # print(type(response))
 
@@ -171,9 +223,14 @@ def main():
     # print(type(response2))
 
     question3 = '根據先前的節日清單，這個節日{"date": "10-31", "name": "蔣公誕辰紀念日"}是否有在該月份清單？'
-    response3 = generate_hw03(question2, question3)
-    print(response3)
-    print(type(response3))
+    # response3 = generate_hw03(question2, question3)
+    # print(response3)
+    # print(type(response3))
+
+    question4 = '請問中華台北的積分是多少'
+    response4 = generate_hw04(question4)
+    # print(response4)
+    # print(type(response4))
 
 
 if __name__ == '__main__':
